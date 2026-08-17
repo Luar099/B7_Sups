@@ -46,6 +46,10 @@ export const assessments = sqliteTable("assessments", {
   neck: real("neck").notNull(),
   hip: real("hip").notNull(),
   bodyFat: real("body_fat").notNull(),
+  age: integer("age").notNull().default(30),
+  sex: text("sex").notNull().default("male"),
+  activity: real("activity").notNull().default(1.55),
+  measurementsJson: text("measurements_json").notNull().default("{}"),
   notes: text("notes").notNull().default(""),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
@@ -58,3 +62,4 @@ export const plans = sqliteTable("plans", {
   contentJson: text("content_json").notNull(),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
