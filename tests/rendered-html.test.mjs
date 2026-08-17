@@ -13,7 +13,10 @@ test("contains the complete B7 customer and admin experience", async () => {
   ]);
   assert.match(page, /PAINEL ADMINISTRATIVO/);
   assert.match(page, /ÁREA DO CLIENTE/);
-  assert.match(page, /CALCULADORA CORPORAL/);
+  assert.match(page, /AVALIAÇÃO CORPORAL COMPLETA/);
+  assert.match(page, /FOOD_LIBRARY/);
+  assert.match(page, /EXERCISE_LIBRARY/);
+  assert.match(page, /measurementsJson/);
   assert.match(page, /PLANO PERSONALIZADO/);
   assert.match(page, /PROJETO DIAMANTE/);
   assert.match(api, /session\.role !== "admin"/);
@@ -31,3 +34,4 @@ test("uses persistent storage and dynamic social metadata", async () => {
   assert.match(layout, /x-forwarded-host/);
   assert.match(layout, /\/og\.png/);
 });
+
