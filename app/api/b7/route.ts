@@ -102,10 +102,10 @@ export async function POST(request: Request) {
     if (action === "saveAssessment") {
       const input = payload.assessment as Record<string, unknown>;
       const email = String(input.clientEmail || "").toLowerCase();
-      const height = Number(input.height); const weight = Number(input.weight); const waist = Number(input.waist); const neck = Number(input.neck); const hip = Number(input.hip);
-      const density = 1.0324 - .19077 * Math.log10(Math.max(waist - neck, 1)) + .15456 * Math.log10(height);
+      const height = Number(input.height); const weight = Number(input.weight); const waist = Number(input.waist); const neck = Number(input.neck); const hip = Number(input.hip); const sex = String(input.sex || "male");
+      const density = sex === "female" ? 1.29579 - .35004 * Math.log10(Math.max(waist + hip - neck, 1)) + .221 * Math.log10(height) : 1.0324 - .19077 * Math.log10(Math.max(waist - neck, 1)) + .15456 * Math.log10(height);
       const bodyFat = Math.min(55, Math.max(3, 495 / density - 450));
-      const [assessment] = await db.insert(assessments).values({ clientEmail: email, weight, height, waist, neck, hip, bodyFat, notes: String(input.notes || "") }).returning();
+      const [assessment] = await db.insert(assessments).values({ clientEmail: email, weight, height, waist, neck, hip, bodyFat, age: Number(input.age || 30), sex, activity: Number(input.activity || 1.55), measurementsJson: JSON.stringify(input.measurements || {}), notes: String(input.notes || "") }).returning();
       return Response.json({ assessment });
     }
     if (action === "savePlan") {
@@ -121,3 +121,4 @@ export async function POST(request: Request) {
     return Response.json({ error: error instanceof Error ? error.message : "Falha ao salvar" }, { status: 500 });
   }
 }
+
