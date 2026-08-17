@@ -17,12 +17,15 @@ test("contains the complete B7 customer and admin experience", async () => {
   assert.match(page, /FOOD_LIBRARY/);
   assert.match(page, /EXERCISE_LIBRARY/);
   assert.match(page, /measurementsJson/);
+  assert.match(page, /COMO USAR O PAINEL ADM/);
+  assert.match(page, /COMO USAR SEU PAINEL/);
   assert.match(page, /PLANO PERSONALIZADO/);
   assert.match(page, /PROJETO DIAMANTE/);
   assert.match(api, /session\.role !== "admin"/);
   assert.match(api, /action === "checkout"/);
   assert.match(schema, /sqliteTable\("assessments"/);
-  assert.match(css, /--black:#070707/);
+  assert.match(css, /--black:#1d1f21/);
+  assert.match(css, /tutorial-grid/);
 });
 
 test("uses persistent storage and dynamic social metadata", async () => {
