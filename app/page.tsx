@@ -16,7 +16,7 @@ const money = (n:number) => n.toLocaleString("pt-BR", { style:"currency", curren
 const date = (value:string) => new Date(value).toLocaleDateString("pt-BR");
 const parse = <T,>(value:string, fallback:T):T => { try { return JSON.parse(value) as T; } catch { return fallback; } };
 const initials = (name:string) => name.split(" ").slice(0,2).map(x=>x[0]).join("").toUpperCase();
-const DEMO_KEY = "b7-sup-demo-v2";
+const DEMO_KEY = "b7-sup-demo-v3";
 
 const makeDemoData = (role:Role="admin"):Data => ({
   session:{user:{displayName:role==="admin"?"Raul · Administrador":"Cliente Teste",email:role==="admin"?"raul.soliveiraa@gmail.com":"cliente@b7.demo"},role},
