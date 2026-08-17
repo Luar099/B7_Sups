@@ -16,6 +16,27 @@ const money = (n:number) => n.toLocaleString("pt-BR", { style:"currency", curren
 const date = (value:string) => new Date(value).toLocaleDateString("pt-BR");
 const parse = <T,>(value:string, fallback:T):T => { try { return JSON.parse(value) as T; } catch { return fallback; } };
 const initials = (name:string) => name.split(" ").slice(0,2).map(x=>x[0]).join("").toUpperCase();
+const DEMO_KEY = "b7-sup-demo-v2";
+
+const makeDemoData = (role:Role="admin"):Data => ({
+  session:{user:{displayName:role==="admin"?"Raul · Administrador":"Cliente Teste",email:role==="admin"?"raul.soliveiraa@gmail.com":"cliente@b7.demo"},role},
+  products:[
+    {id:1,name:"Creatina Monohidratada",brand:"B7 PURE",category:"Creatina",description:"Força, potência e recuperação.",size:"300 g · sem sabor",price:89.9,oldPrice:129.9,stock:36,badge:"-31%",imageUrl:"",active:true},
+    {id:2,name:"Whey Protein 80%",brand:"B7 PERFORMANCE",category:"Proteína",description:"Proteína concentrada para recuperação muscular.",size:"900 g · chocolate",price:139.9,oldPrice:169.9,stock:28,badge:"MAIS VENDIDO",imageUrl:"",active:true},
+    {id:3,name:"Whey Protein Isolado",brand:"B7 PERFORMANCE",category:"Proteína",description:"Alta concentração proteica e rápida absorção.",size:"900 g · baunilha",price:189.9,oldPrice:229.9,stock:17,badge:"DESTAQUE",imageUrl:"",active:true},
+    {id:4,name:"Pré-Treino Black",brand:"B7 ENERGY",category:"Pré-treino",description:"Energia e foco para treinos intensos.",size:"300 g · frutas vermelhas",price:119.9,oldPrice:149.9,stock:22,badge:"NOVO",imageUrl:"",active:true},
+    {id:5,name:"Multivitamínico Daily",brand:"B7 HEALTH",category:"Vitaminas",description:"Vitaminas e minerais essenciais.",size:"60 cápsulas",price:59.9,oldPrice:74.9,stock:41,badge:"-20%",imageUrl:"",active:true},
+    {id:6,name:"Combo Evolução",brand:"B7 PROTOCOL",category:"Combos",description:"Whey, creatina e pré-treino.",size:"3 produtos",price:299.9,oldPrice:369.7,stock:12,badge:"ECONOMIZE R$ 69",imageUrl:"",active:true},
+  ],
+  clients:[{id:1,email:"cliente@b7.demo",name:"Cliente Teste",phone:"(11) 99999-0707",goal:"Reduzir gordura para 14%",status:"ATIVO",createdAt:"2026-07-01T12:00:00Z"}],
+  client:{id:1,email:"cliente@b7.demo",name:"Cliente Teste",phone:"(11) 99999-0707",goal:"Reduzir gordura para 14%",status:"ATIVO",createdAt:"2026-07-01T12:00:00Z"},
+  orders:[{id:1042,clientEmail:"cliente@b7.demo",total:229.8,status:"PAGAMENTO APROVADO",payment:"PIX",itemsJson:JSON.stringify([{id:1,name:"Creatina Monohidratada",price:89.9,quantity:1},{id:2,name:"Whey Protein 80%",price:139.9,quantity:1}]),createdAt:"2026-08-15T14:30:00Z"}],
+  assessments:[{id:1,clientEmail:"cliente@b7.demo",weight:82,height:178,waist:84,neck:39,hip:101,bodyFat:17.8,notes:"Boa evolução. Manter consistência e repetir a avaliação em 30 dias.",createdAt:"2026-08-10T12:00:00Z"}],
+  plans:[
+    {id:1,clientEmail:"cliente@b7.demo",type:"nutrition",title:"Plano alimentar · definição",contentJson:JSON.stringify([{time:"07:00",name:"Café da manhã",foods:"3 ovos, pão integral, banana e leite",kcal:"550"},{time:"12:30",name:"Almoço",foods:"Arroz, feijão, frango e salada",kcal:"680"},{time:"16:30",name:"Pré-treino",foods:"Banana, aveia e café",kcal:"310"},{time:"20:00",name:"Jantar",foods:"Batata-doce, patinho e legumes",kcal:"480"}]),updatedAt:"2026-08-12T12:00:00Z"},
+    {id:2,clientEmail:"cliente@b7.demo",type:"training",title:"Treino A · peito e tríceps",contentJson:JSON.stringify([{name:"Supino reto",sets:"4",reps:"10",load:"70"},{name:"Supino inclinado",sets:"4",reps:"10",load:"52"},{name:"Crossover",sets:"4",reps:"12",load:"25"},{name:"Tríceps corda",sets:"4",reps:"10",load:"30"}]),updatedAt:"2026-08-12T12:00:00Z"},
+  ],
+});
 
 function Mark({ compact=false }:{ compact?:boolean }) {
   return <div className={compact ? "mark compact" : "mark"}><span>B7</span><small>SUPLEMENTOS</small></div>;
@@ -41,8 +62,15 @@ export default function Home() {
   const [toast,setToast] = useState("");
   const [busy,setBusy] = useState(false);
   const [intro,setIntro] = useState(true);
+  const [demoMode,setDemoMode] = useState(false);
 
   const load = async () => {
+    if (location.hostname.endsWith("github.io")) {
+      setDemoMode(true);
+      const stored=localStorage.getItem(DEMO_KEY);
+      setData(stored?parse<Data>(stored,makeDemoData()):makeDemoData());
+      return;
+    }
     const response = await fetch("/api/b7", { cache:"no-store" });
     const result = await response.json() as Data & { error?:string };
     if (!response.ok) throw new Error(result.error || "Não foi possível carregar a B7");
@@ -54,6 +82,37 @@ export default function Home() {
   const post = async (payload:unknown) => {
     setBusy(true);
     try {
+      if(demoMode){
+        const input=payload as Record<string,unknown>;
+        const next=structuredClone(data||makeDemoData());
+        const action=String(input.action||"");
+        if(action==="checkout"){
+          next.orders=[{id:Date.now(),clientEmail:next.session.user?.email||"cliente@b7.demo",total:Number(input.total),status:"PAGAMENTO PENDENTE",payment:String(input.payment||"PIX"),itemsJson:JSON.stringify(input.items||[]),createdAt:new Date().toISOString()},...(next.orders||[])];
+        }
+        if(action==="saveProduct"){
+          const item=input.product as Product; const id=Number(item.id||0);
+          const saved={...item,id:id||Math.max(0,...next.products.map(p=>p.id))+1,active:item.active!==false} as Product;
+          next.products=id?next.products.map(p=>p.id===id?saved:p):[saved,...next.products];
+        }
+        if(action==="saveClient"){
+          const item=input.client as Client; const existing=(next.clients||[]).find(c=>c.email===item.email);
+          const saved={...item,id:existing?.id||Date.now(),createdAt:existing?.createdAt||new Date().toISOString()} as Client;
+          next.clients=existing?(next.clients||[]).map(c=>c.email===saved.email?saved:c):[saved,...(next.clients||[])];
+        }
+        if(action==="updateOrder") next.orders=(next.orders||[]).map(o=>o.id===Number(input.id)?{...o,status:String(input.status)}:o);
+        if(action==="saveAssessment"){
+          const item=input.assessment as Record<string,unknown>; const height=Number(item.height),weight=Number(item.weight),waist=Number(item.waist),neck=Number(item.neck);
+          const density=1.0324-.19077*Math.log10(Math.max(waist-neck,1))+.15456*Math.log10(height);
+          const saved:Assessment={id:Date.now(),clientEmail:String(item.clientEmail),height,weight,waist,neck,hip:Number(item.hip),bodyFat:Math.min(55,Math.max(3,495/density-450)),notes:String(item.notes||""),createdAt:new Date().toISOString()};
+          next.assessments=[saved,...(next.assessments||[])];
+        }
+        if(action==="savePlan"){
+          const item=input.plan as Record<string,unknown>; const type=String(item.type) as "nutrition"|"training"; const email=String(item.clientEmail);
+          const saved:Plan={id:Date.now(),clientEmail:email,type,title:String(item.title),contentJson:JSON.stringify(item.content||[]),updatedAt:new Date().toISOString()};
+          next.plans=[saved,...(next.plans||[]).filter(p=>!(p.clientEmail===email&&p.type===type))];
+        }
+        localStorage.setItem(DEMO_KEY,JSON.stringify(next)); setData(next); return {ok:true};
+      }
       const response=await fetch("/api/b7",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
       const result=await response.json() as {error?:string};
       if(!response.ok) throw new Error(result.error || "Não foi possível salvar");
@@ -66,11 +125,17 @@ export default function Home() {
   const total=cartItems.reduce((sum,item)=>sum+item.product.price*item.quantity,0);
   const role=data?.session.role || "guest";
   const account = () => role==="guest" ? location.assign("/signin-with-chatgpt?return_to=/") : go(role==="admin"?"admin":"client");
+  const switchDemo=(nextRole:"admin"|"client")=>{
+    const next=structuredClone(data||makeDemoData(nextRole));
+    next.session={role:nextRole,user:{displayName:nextRole==="admin"?"Raul · Administrador":"Cliente Teste",email:nextRole==="admin"?"raul.soliveiraa@gmail.com":"cliente@b7.demo"}};
+    localStorage.setItem(DEMO_KEY,JSON.stringify(next)); setData(next); go(nextRole);
+  };
   const add=(product:Product)=>{setCart(c=>({...c,[product.id]:(c[product.id]||0)+1}));notify(`${product.name} adicionado`)};
 
   return <main>
     {intro&&<div className="intro"><Mark/><p>PERFORMANCE · MÉTODO · EVOLUÇÃO</p></div>}
     <div className="benefit-bar"><span>FRETE GRÁTIS ACIMA DE R$ 199</span><span>5% OFF NO PIX</span><span>PRODUTOS SELECIONADOS</span></div>
+    {demoMode&&<div className="demo-bar"><strong>MODO DE TESTE ONLINE</strong><span>Escolha o painel:</span><button className={role==="admin"?"active":""} onClick={()=>switchDemo("admin")}>ADMINISTRADOR</button><button className={role==="client"?"active":""} onClick={()=>switchDemo("client")}>CLIENTE</button><button onClick={()=>{const reset=makeDemoData("admin");localStorage.setItem(DEMO_KEY,JSON.stringify(reset));setData(reset);go("admin");notify("Demonstração restaurada")}}>RESTAURAR DADOS</button></div>}
     <header>
       <button className="mobile-menu" onClick={()=>setMenu(true)} aria-label="Abrir menu de três pontos"><i/><i/><i/></button>
       <button className="logo-button" onClick={()=>go("home")}><Mark compact/></button>
